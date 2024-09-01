@@ -29,7 +29,7 @@ model = ViTModel.from_pretrained('google/vit-base-patch16-224')
 feature_extractor = ViTFeatureExtractor.from_pretrained('google/vit-base-patch16-224')
 
 # Load your custom weights
-state_dict = torch.load('model_weights.pth', map_location=torch.device('cpu'))
+state_dict = torch.load(MODEL_WEIGHTS_PATH, map_location=torch.device('cpu'))
 new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
 model.load_state_dict(new_state_dict, strict=False)
 print("Loaded pre-trained weights successfully.")
