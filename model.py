@@ -7,6 +7,16 @@ from transformers import ViTModel, ViTFeatureExtractor
 import os
 
 logging.basicConfig(level=logging.INFO)
+import gdown
+import os
+
+def download_file(file_id, output_path):
+    if not os.path.exists(output_path):
+        url = f"https://drive.google.com/uc?id={file_id}"
+        gdown.download(url, output_path, quiet=False)
+        print(f"Downloaded {output_path}")
+    else:
+        print(f"{output_path} already exists.")
 
 # Load pre-extracted features
 pre_extracted_data = np.load('pre_extracted_features.npz')
