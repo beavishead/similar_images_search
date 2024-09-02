@@ -21,23 +21,29 @@ logging.basicConfig(level=logging.INFO)
 
 dataset_features = None
 image_paths = None
+is_initialized = False
 
-@app.before_first_request
 def initialize():
-    global dataset_features, image_paths
-    try:
-        logging.info("Starting initialization...")
-        download_file(MODEL_WEIGHTS_ID, MODEL_WEIGHTS_PATH)
-        logging.info(f"Downloaded model weights to {MODEL_WEIGHTS_PATH}")
-        download_file(DATASET_ZIP_ID, DATASET_ZIP_PATH)
-        logging.info(f"Downloaded dataset to {DATASET_ZIP_PATH}")
-        
-        load_model(MODEL_WEIGHTS_PATH)
-        dataset_features, image_paths = load_features(DATASET_ZIP_PATH)
-        
-        logging.info("Initialization complete")
-    except Exception as e:
-        logging.error(f"Initialization error: {e}")
+    global dataset_features, image_paths, is_initialized
+    if not is_initialized:
+        try:
+            logging.info("Starting initialization...")
+            download_file(MODEL_WEIGHTS_ID, MODEL_WEIGHTS_PATH)
+            logging.info(f"Downloaded model weights to {MODEL_WEIGHTS_PATH}")
+            download_file(DATASET_ZIP_ID, DATASET_ZIP_PATH)
+            logging.info(f"Downloaded dataset to {DATASET_ZIP_PATH}")
+            
+            load_model(MODEL_WEIGHTS_PATH)
+            dataset_features, image_paths = load_features(DATASET_ZIP_PATH)
+            
+            logging.info("Initialization complete")
+            is_initialized = True
+        except Exception as e:
+            logging.error(f"Initialization error: {e}")
+
+@app.before_request
+def before_request():
+    initialize()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
