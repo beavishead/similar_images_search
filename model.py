@@ -23,7 +23,7 @@ feature_extractor = ViTFeatureExtractor.from_pretrained('google/vit-base-patch16
 
 def load_model(weights_path):
     global model
-    state_dict = torch.load(weights_path, map_location=torch.device('cpu'))
+    state_dict = torch.load(weights_path, map_location=torch.device('cpu'),weights_only=True)
     new_state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
     model.load_state_dict(new_state_dict, strict=False)
     print("Loaded pre-trained weights successfully.")
