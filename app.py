@@ -25,49 +25,59 @@ dataset_features = None
 image_paths = None
 is_initialized = False
 
+def safe_extract_zip(zip_path, extract_path):
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_path)
+        logging.info(f"Extracted {zip_path} to {extract_path}")
+    except zipfile.BadZipFile:
+        logging.error(f"File is not a valid zip file: {zip_path}")
+    except Exception as e:
+        logging.error(f"Error extracting {zip_path}: {str(e)}")
+
 def initialize():
     global dataset_features, image_paths, is_initialized
     if not is_initialized:
         try:
             logging.info("Starting initialization...")
             
-            # Download and check model weights
-            download_file(MODEL_WEIGHTS_ID, MODEL_WEIGHTS_PATH)
-            logging.info(f"Checking if {MODEL_WEIGHTS_PATH} exists: {os.path.exists(MODEL_WEIGHTS_PATH)}")
+            # Download files if they don't exist
+            if not os.path.exists(MODEL_WEIGHTS_PATH):
+                download_file(MODEL_WEIGHTS_ID, MODEL_WEIGHTS_PATH)
+            if not os.path.exists(FEATURES_PATH):
+                download_file(FEATURES_ZIP_ID, FEATURES_PATH)
+            if not os.path.exists(DATASET_ZIP_PATH):
+                download_file(DATASET_ZIP_ID, DATASET_ZIP_PATH)
             
-            # Download and check pre-extracted features
-            download_file(FEATURES_ZIP_ID, FEATURES_PATH)
-            logging.info(f"Checking if {FEATURES_PATH} exists: {os.path.exists(FEATURES_PATH)}")
+            # Extract dataset if needed
+            if os.path.exists(DATASET_ZIP_PATH) and not os.listdir(DATASET_EXTRACT_PATH):
+                safe_extract_zip(DATASET_ZIP_PATH, DATASET_EXTRACT_PATH)
             
-            # Download and extract dataset
-            download_file(DATASET_ZIP_ID, DATASET_ZIP_PATH)
-            logging.info(f"Checking if {DATASET_ZIP_PATH} exists: {os.path.exists(DATASET_ZIP_PATH)}")
-            
-            if os.path.exists(DATASET_ZIP_PATH):
-                with zipfile.ZipFile(DATASET_ZIP_PATH, 'r') as zip_ref:
-                    zip_ref.extractall(DATASET_EXTRACT_PATH)
-                logging.info(f"Extracted dataset to {DATASET_EXTRACT_PATH}")
-            else:
-                logging.error(f"Dataset zip file not found: {DATASET_ZIP_PATH}")
-            
+            # Load model and features
             if os.path.exists(MODEL_WEIGHTS_PATH):
                 load_model(MODEL_WEIGHTS_PATH)
             else:
-                logging.error(f"Model weights file not found: {MODEL_WEIGHTS_PATH}")
+                raise FileNotFoundError(f"Model weights file not found: {MODEL_WEIGHTS_PATH}")
             
             if os.path.exists(FEATURES_PATH):
                 dataset_features, image_paths = load_features(FEATURES_PATH)
             else:
-                logging.error(f"Pre-extracted features file not found: {FEATURES_PATH}")
+                raise FileNotFoundError(f"Pre-extracted features file not found: {FEATURES_PATH}")
             
             logging.info("Initialization complete")
             is_initialized = True
         except Exception as e:
-            logging.error(f"Initialization error: {e}")
+            logging.error(f"Initialization error: {str(e)}")
+            raise  # Re-raise the exception to prevent the app from starting if initialization fails
 
 @app.before_request
 def before_request():
-    initialize()
+    if not is_initialized:
+        try:
+            initialize()
+        except Exception as e:
+            logging.error(f"Initialization failed: {str(e)}")
+            return "Application failed to initialize. Please check the logs.", 500
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
