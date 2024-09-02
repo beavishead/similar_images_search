@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 def download_file(file_id, output_path):
     if not os.path.exists(output_path):
-        url = f"https://drive.google.com/uc?id={file_id}"
+        url = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
         gdown.download(url, output_path, quiet=False)
         print(f"Downloaded {output_path}")
     else:

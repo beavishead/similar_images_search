@@ -10,11 +10,13 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['DATASET_FOLDER'] = 'static/dataset'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 
-MODEL_WEIGHTS_ID = "1zDRHwzKKu-6hxyUdBgcuROGmwG1ydFBr"
-DATASET_ZIP_ID = "1K3KFek9t9nqqQFzewyT85VqzfJ92TF6j"
+MODEL_WEIGHTS_ID = "1nC1I9f_bj66F18fM2b0e_aC8snwHVjas"
+FEATURES_ZIP_ID = "1zDRHwzKKu-6hxyUdBgcuROGmwG1ydFBr"
+DATASET_ZIP_ID = "1K3KFek9t9nqqQFzewyT85VqzfJ92TF6j"  # Add this ID for your dataset zip
 
 MODEL_WEIGHTS_PATH = "model_weights.pth"
-DATASET_ZIP_PATH = "pre_extracted_features.npz"
+FEATURES_PATH = "pre_extracted_features.npz"
+DATASET_ZIP_PATH = "dataset.zip"
 DATASET_EXTRACT_PATH = app.config['DATASET_FOLDER']
 
 logging.basicConfig(level=logging.INFO)
@@ -28,13 +30,35 @@ def initialize():
     if not is_initialized:
         try:
             logging.info("Starting initialization...")
-            download_file(MODEL_WEIGHTS_ID, MODEL_WEIGHTS_PATH)
-            logging.info(f"Downloaded model weights to {MODEL_WEIGHTS_PATH}")
-            download_file(DATASET_ZIP_ID, DATASET_ZIP_PATH)
-            logging.info(f"Downloaded dataset to {DATASET_ZIP_PATH}")
             
-            load_model(MODEL_WEIGHTS_PATH)
-            dataset_features, image_paths = load_features(DATASET_ZIP_PATH)
+            # Download and check model weights
+            download_file(MODEL_WEIGHTS_ID, MODEL_WEIGHTS_PATH)
+            logging.info(f"Checking if {MODEL_WEIGHTS_PATH} exists: {os.path.exists(MODEL_WEIGHTS_PATH)}")
+            
+            # Download and check pre-extracted features
+            download_file(FEATURES_ZIP_ID, FEATURES_PATH)
+            logging.info(f"Checking if {FEATURES_PATH} exists: {os.path.exists(FEATURES_PATH)}")
+            
+            # Download and extract dataset
+            download_file(DATASET_ZIP_ID, DATASET_ZIP_PATH)
+            logging.info(f"Checking if {DATASET_ZIP_PATH} exists: {os.path.exists(DATASET_ZIP_PATH)}")
+            
+            if os.path.exists(DATASET_ZIP_PATH):
+                with zipfile.ZipFile(DATASET_ZIP_PATH, 'r') as zip_ref:
+                    zip_ref.extractall(DATASET_EXTRACT_PATH)
+                logging.info(f"Extracted dataset to {DATASET_EXTRACT_PATH}")
+            else:
+                logging.error(f"Dataset zip file not found: {DATASET_ZIP_PATH}")
+            
+            if os.path.exists(MODEL_WEIGHTS_PATH):
+                load_model(MODEL_WEIGHTS_PATH)
+            else:
+                logging.error(f"Model weights file not found: {MODEL_WEIGHTS_PATH}")
+            
+            if os.path.exists(FEATURES_PATH):
+                dataset_features, image_paths = load_features(FEATURES_PATH)
+            else:
+                logging.error(f"Pre-extracted features file not found: {FEATURES_PATH}")
             
             logging.info("Initialization complete")
             is_initialized = True
@@ -54,6 +78,9 @@ def serve_dataset_image(filename):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    if not is_initialized:
+        return "Application is initializing. Please wait and refresh in a few moments.", 503
+    
     if request.method == 'POST':
         if 'file' not in request.files:
             return jsonify({'error': 'No file part'})
