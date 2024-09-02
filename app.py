@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 from werkzeug.utils import secure_filename
 from model import download_file, extract_features_vit, get_similar_images
 import os
+import zipfile
+import logging
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -9,17 +11,33 @@ app.config['DATASET_FOLDER'] = 'static/dataset'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 
 # Google Drive file IDs - replace with your actual file IDs
-MODEL_WEIGHTS_ID = "https://drive.google.com/file/d/1zDRHwzKKu-6hxyUdBgcuROGmwG1ydFBr/view?usp=sharing"
-DATASET_ZIP_ID = "https://drive.google.com/file/d/1K3KFek9t9nqqQFzewyT85VqzfJ92TF6j/view?usp=sharing"
+MODEL_WEIGHTS_ID = "1zDRHwzKKu-6hxyUdBgcuROGmwG1ydFBr"
+DATASET_ZIP_ID = "1K3KFek9t9nqqQFzewyT85VqzfJ92TF6j"
 
 MODEL_WEIGHTS_PATH = "model_weights.pth"
 DATASET_ZIP_PATH = "pre_extracted_features.npz"
+DATASET_EXTRACT_PATH= app.config['DATASET_FOLDER']
+
+logging.basicConfig(level=logging.INFO)
 
 @app.before_first_request
 def initialize():
-    download_file(MODEL_WEIGHTS_ID, MODEL_WEIGHTS_PATH)
-    download_file(DATASET_ZIP_ID, DATASET_ZIP_PATH)
-    # Any other initialization code you need
+    try:
+        loggin.info("Starting initialization...")
+        download_file(MODEL_WEIGHTS_ID, MODEL_WEIGHTS_PATH)
+        logging.info("Model weights downloaded successfully.")
+        download_file(DATASET_ZIP_ID, DATASET_ZIP_PATH)
+        logging.info(f"Downloaded dataset to {DATASET_ZIP_PATH}")
+    # An
+        if zipfile.is_zipfile(DATASET_ZIP_PATH):
+            with zipfile.ZipFile(DATASET_ZIP_PATH, 'r') as zip_ref:
+                zip_ref.extractall(DATASET_EXTRACT_PATH)
+            logging.info(f"Extracted dataset to {DATASET_EXTRACT_PATH}")
+            logging.info("Dataset extraction completed successfully.")
+
+        logging.info("Initialization completed successfully.")
+    except Exception as e:
+        logging.error(f"An error occurred during initialization: {e}")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']

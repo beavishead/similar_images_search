@@ -5,10 +5,10 @@ from PIL import Image
 import torch
 from transformers import ViTModel, ViTFeatureExtractor
 import os
-
-logging.basicConfig(level=logging.INFO)
 import gdown
 import os
+
+logging.basicConfig(level=logging.INFO)
 
 def download_file(file_id, output_path):
     if not os.path.exists(output_path):
