@@ -2,10 +2,3 @@ __pycache__/
 *.pyc
 venv/
 .env
-model_weights.pth
-dataset/
-dataset/**
-*.pth
-*.jpg
-*.png
-*.jpeg
