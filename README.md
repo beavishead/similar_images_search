@@ -8,12 +8,12 @@ This project implements an image similarity search using a pre-trained Vision Tr
 
 ## Examples of the search with UI
 
-![image]("static/for _readme/example_with_roses.jpg")
-![image]("static/for _readme/example_with_taj_mahal.jpg")
+![image](static/for _readme/example_with_roses.jpg)
+![image](static/for _readme/example_with_taj_mahal.jpg)
 
 ## Key Features
 
-- Utilizes a Vision Transformer (ViT) model for feature extraction [Hugging Face model page](https://img.shields.io/badge/🤗%20Model-ViT--Base--Patch16--224-yellow)(https://huggingface.co/google/vit-base-patch16-224)
+- Utilizes a Vision Transformer (ViT) model for feature extraction [![ViT Model](https://img.shields.io/badge/🤗%20Model-ViT--Base--Patch16--224-yellow)](https://huggingface.co/google/vit-base-patch16-224)
 - Pre-extracted features for quick similarity comparisons
 - Flask web application for easy interaction
 - Supports various image formats (PNG, JPG, JPEG, GIF)
