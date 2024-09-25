@@ -3,31 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Similarity Search</title>
+    <title>ImageFinder AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes wave {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f0f9f9;
         }
-        .wave {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            animation: wave 15s ease-in-out infinite;
-            opacity: 0.2;
+        .upload-button {
+            background-color: #00a86b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            display: inline-block;
+        }
+        .upload-button:hover {
+            background-color: #008c5a;
         }
         .image-container {
             position: relative;
             overflow: hidden;
+            border-radius: 8px;
             cursor: pointer;
+            aspect-ratio: 16 / 9;
         }
         .image-container img {
             transition: transform 0.3s ease;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .image-container:hover img,
         .image-container:focus img {
-            transform: scale(1.1);
+            transform: scale(1.05);
+        }
+        .similarity-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 4px;
+            font-size: 12px;
+            text-align: center;
         }
         .expanded-overlay {
             position: fixed;
@@ -35,70 +58,98 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.8);
             z-index: 1000;
             display: flex;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(5px);
         }
         .expanded-image {
             max-width: 90%;
             max-height: 90%;
             object-fit: contain;
         }
+        #preview-image-container {
+            max-width: 400px;
+            margin: 0 auto;
+            aspect-ratio: 16 / 9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f8f8;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        #preview-image-container:hover {
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        #preview-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            color: #888;
+        }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 text-white p-4 md:p-8 overflow-hidden relative font-sans">
-    <div class="wave bg-gradient-to-r from-indigo-500/30 to-purple-500/30"></div>
-    <div class="wave bg-gradient-to-r from-purple-500/30 to-indigo-500/30" style="animation-delay: -2s;"></div>
-    <div class="wave bg-gradient-to-r from-indigo-500/30 to-purple-500/30" style="animation-delay: -4s;"></div>
-    <div class="wave bg-gradient-to-r from-purple-500/30 to-indigo-500/30" style="animation-delay: -6s;"></div>
-
-    <header class="text-center mb-8 relative z-10">
-        <h1 class="text-4xl md:text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300">Discover similar images</h1>
-        <p class="text-lg text-indigo-200">Upload an image and using AI find visually similar ones in our database</p>
+<body class="min-h-screen flex flex-col">
+    <header class="flex justify-between items-center p-4 bg-white shadow-md">
+        <h1 class="text-2xl font-bold text-gray-800">ImageFinder AI</h1>
+        <svg class="w-8 h-8 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+            <path d="M2 2l7.586 7.586"></path>
+            <circle cx="11" cy="11" r="2"></circle>
+        </svg>
     </header>
 
-    <div class="grid md:grid-cols-2 gap-8 relative z-10">
-        <div>
-            <div class="bg-white/10 backdrop-blur-md border border-indigo-500/20 shadow-xl rounded-lg p-6">
-                <h2 class="text-2xl font-semibold mb-4 text-indigo-300">Upload Your Image</h2>
+    <main class="flex-grow flex justify-center">
+        <div class="w-1/8"></div>
+        <div class="w-3/4 p-8">
+            <h2 class="text-3xl font-bold mb-2 text-center">Discover similar images</h2>
+            <p class="text-gray-600 mb-6 text-center">Upload an image and using AI find visually similar ones in our database</p>
+
+            <div id="upload-area" class="mb-8">
                 <form id="upload-form" enctype="multipart/form-data">
-                    <div id="upload-area" class="border-2 border-dashed border-indigo-500/50 rounded-lg p-8 text-center transition-all duration-300 ease-in-out hover:border-indigo-500/80">
-                        <input type="file" id="file-input" name="file" class="hidden" accept="image/*">
-                        <label for="file-input" class="cursor-pointer">
-                            <div id="upload-content" class="flex flex-col items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    <input type="file" id="file-input" name="file" class="hidden" accept="image/*">
+                    <label for="file-input" class="cursor-pointer block">
+                        <div id="upload-content" class="bg-white rounded-lg shadow-md overflow-hidden">
+                            <div id="preview-image-container" class="flex justify-center items-center">
+                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
                                 </svg>
-                                <span class="text-lg font-medium">Click to upload or drag and drop</span>
-                                <span class="text-sm text-indigo-200 mt-2">SVG, PNG, JPG or GIF (max. 800x400px)</span>
+                                <img id="preview-image" src="" alt="Upload preview" class="hidden rounded-lg">
                             </div>
-                            <div id="uploaded-image-container" class="hidden mt-4 flex justify-center items-center">
-                                <img id="uploaded-image" class="max-w-full max-h-96 object-contain" alt="Uploaded Image">
+                            <div class="p-4 flex justify-center">
+                                <button type="submit" class="upload-button">Upload and Find Similar Images</button>
                             </div>
-                        </label>
-                    </div>
-                    <button type="submit" class="w-full mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 text-white font-bold py-2 px-4 rounded">
-                        Upload and Find Similar Images
-                    </button>
+                        </div>
+                    </label>
                 </form>
-                <div id="progress-container" class="hidden mt-4">
-                    <div class="bg-indigo-900 rounded-full h-2 overflow-hidden">
-                        <div id="progress-bar" class="bg-indigo-500 h-full transition-all duration-300 ease-out" style="width: 0%"></div>
-                    </div>
-                    <p id="progress-text" class="text-center mt-2 text-indigo-300"></p>
+            </div>
+
+            <div id="progress-container" class="hidden mb-8">
+                <div class="bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div id="progress-bar" class="bg-green-500 h-full transition-all duration-300 ease-out" style="width: 0%"></div>
                 </div>
+                <p id="progress-text" class="text-center mt-2 text-gray-600"></p>
+            </div>
+
+            <div id="results-container" class="hidden">
+                <h3 class="text-xl font-bold mb-4 text-center">Similar Images</h3>
+                <div id="similar-images" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
             </div>
         </div>
-        <div id="results-container" class="hidden">
-            <div class="bg-white/10 backdrop-blur-md border border-indigo-500/20 shadow-xl rounded-lg p-6">
-                <h2 class="text-2xl font-semibold mb-4 text-indigo-300">Similar Images</h2>
-                <div id="similar-images" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
-            </div>
-        </div>
-    </div>
+        <div class="w-1/8"></div>
+    </main>
 
     <script>
         document.getElementById('file-input').addEventListener('change', function(e) {
@@ -106,13 +157,11 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const uploadedImage = document.getElementById('uploaded-image');
-                    const uploadedImageContainer = document.getElementById('uploaded-image-container');
-                    const uploadContent = document.getElementById('upload-content');
-                    
-                    uploadedImage.src = e.target.result;
-                    uploadedImageContainer.classList.remove('hidden');
-                    uploadContent.classList.add('hidden');
+                    const previewImage = document.getElementById('preview-image');
+                    const uploadIcon = document.querySelector('.upload-icon');
+                    previewImage.src = e.target.result;
+                    previewImage.classList.remove('hidden');
+                    uploadIcon.classList.add('hidden');
                 };
                 reader.readAsDataURL(file);
             }
@@ -156,68 +205,60 @@
                 clearInterval(interval);
                 progressContainer.classList.add('hidden');
                 resultsContainer.classList.remove('hidden');
-                
+
                 if (data.error) {
                     console.error("Error from server:", data.error);
                     progressText.textContent = `Error: ${data.error}`;
                     return;
                 }
-                
+
                 if (!data.similar_images || !Array.isArray(data.similar_images)) {
                     console.error("Invalid data structure received:", data);
                     progressText.textContent = 'Invalid data received from server';
                     return;
                 }
-                
+
                 data.similar_images.forEach((image, index) => {
-                const containerDiv = document.createElement('div');
-                containerDiv.className = 'image-container relative aspect-square bg-gradient-to-br from-indigo-800/50 to-purple-600/50 rounded-lg overflow-hidden flex flex-col items-center justify-center';
-                containerDiv.tabIndex = 0;  // Make it focusable
+                    const containerDiv = document.createElement('div');
+                    containerDiv.className = 'image-container';
+                    containerDiv.tabIndex = 0;
 
-                const imgElement = document.createElement('img');
-                imgElement.src = image.path;
-                imgElement.alt = `Similar Image ${index + 1}`;
-                imgElement.className = 'w-full h-full object-cover rounded-lg transition-transform duration-200';
-                imgElement.onerror = function() {
-                    console.error(`Failed to load image: ${image.path}`);
-                    this.onerror = null;
-                    this.src = '/static/error_image.png';  // Replace with a path to a default error image
-                };
+                    const imgElement = document.createElement('img');
+                    imgElement.src = image.path;
+                    imgElement.alt = `Similar Image ${index + 1}`;
+                    imgElement.className = 'w-full h-full object-cover';
+                    imgElement.onerror = function() {
+                        this.onerror = null;
+                        this.src = '/api/placeholder/400/225';
+                    };
 
-                const similarityText = document.createElement('p');
-                similarityText.textContent = `${image.similarity.toFixed(2)}% similar`;
-                similarityText.className = 'absolute bottom-0 left-0 right-0 bg-black/50 text-white text-center py-1 text-sm';
+                    const similarityLabel = document.createElement('div');
+                    similarityLabel.className = 'similarity-label';
+                    similarityLabel.textContent = `${(image.similarity * 100).toFixed(0)}% similar`;
 
-                containerDiv.appendChild(imgElement);
-                containerDiv.appendChild(similarityText);
-                similarImagesContainer.appendChild(containerDiv);
+                    containerDiv.appendChild(imgElement);
+                    containerDiv.appendChild(similarityLabel);
+                    similarImagesContainer.appendChild(containerDiv);
 
-                containerDiv.addEventListener('click', function() {
-                    const expandedOverlay = document.createElement('div');
-                    expandedOverlay.className = 'expanded-overlay';
-                    const expandedImg = imgElement.cloneNode(true);
-                    expandedImg.className = 'expanded-image';
-                    expandedOverlay.appendChild(expandedImg);
-                    expandedOverlay.addEventListener('click', function() {
-                        this.remove();
+                    containerDiv.addEventListener('click', function() {
+                        const expandedOverlay = document.createElement('div');
+                        expandedOverlay.className = 'expanded-overlay';
+                        const expandedImage = document.createElement('img');
+                        expandedImage.src = image.path;
+                        expandedImage.className = 'expanded-image';
+                        expandedOverlay.appendChild(expandedImage);
+                        document.body.appendChild(expandedOverlay);
+                        expandedOverlay.addEventListener('click', function() {
+                            document.body.removeChild(expandedOverlay);
+                        });
                     });
-                    document.body.appendChild(expandedOverlay);
                 });
-
-                containerDiv.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        this.click();
-                    }
-                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                progressText.textContent = 'An error occurred during the upload.';
             });
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            clearInterval(interval);
-            progressContainer.classList.add('hidden');
-            progressText.textContent = 'An error occurred. Please try again.';
         });
-    });
     </script>
 </body>
 </html>

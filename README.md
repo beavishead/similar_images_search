@@ -8,8 +8,11 @@ This project implements an image similarity search using a pre-trained Vision Tr
 
 ## Examples of the search with UI
 
-![image](static/for _readme/example_with_roses.jpg)
-![image](static/for _readme/example_with_taj_mahal.jpg)
+<div style="display: flex; justify-content: space-around;">
+  <img src="static\for_readme\01_roses.png" alt="Image 1" width="300" />
+  <img src="static\for_readme\02_duck.png" alt="Image 2" width="300" />
+  <img src="static\for_readme\03_bumblebee.png" alt="Image 3" width="300" />
+</div>
 
 ## Key Features
 
